@@ -1,10 +1,38 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { Mail, Instagram, Linkedin, Send } from 'lucide-react';
 import { Container, Typography, Box } from '@mui/material';
 import { motion } from 'framer-motion';
 
 const ContactPage = () => {
+    const [sending, setSending] = useState(false);
+    const [feedback, setFeedback] = useState(null);
+
+    async function handleSubmit(event) {
+        event.preventDefault();
+        if (sending) return;
+        const form = event.currentTarget;
+        const data = Object.fromEntries(new FormData(form));
+        setSending(true);
+        setFeedback(null);
+        try {
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Unable to send your message. Please try again.');
+            setFeedback({ success: true, text: "Message sent! We’ll reply to the email address you provided." });
+            form.reset();
+        } catch (error) {
+            setFeedback({ success: false, text: error.message || 'Unable to send your message. Please try again.' });
+        } finally {
+            setSending(false);
+        }
+    }
+
+    const fieldClass = 'mt-2 block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-blue-400/40 focus:border-blue-400';
     const containerVariants = {
         hidden: { opacity: 0, y: 20 },
         visible: {
@@ -27,7 +55,7 @@ const ContactPage = () => {
     };
 
     return (
-        <div className="relative isolate min-h-screen">
+        <div className="relative isolate min-h-screen pb-16">
             {/* Top Gradient Background */}
             <div
                 aria-hidden="true"
@@ -58,46 +86,59 @@ const ContactPage = () => {
                             Have questions about joining KTP or want to learn more?
                         </Typography>
                         <Typography variant="h6" className="text-gray-400 font-light mt-2">
-                            Reach out to us through any of these platforms!
+                            Send us a message. We’d love to hear from you!
                         </Typography>
                         <Send className="h-6 w-6 text-blue-400 mx-auto mt-4 animate-bounce" />
                     </Box>
 
-                    <div className="flex flex-col gap-8 items-center mt-12">
-                        <motion.div variants={itemVariants} className="w-full max-w-md">
-                            <a
-                                href="mailto:ktpnewbrunswick@gmail.com"
-                                className="flex items-center gap-4 text-white hover:text-blue-400 transition-all transform hover:scale-105 text-xl bg-white/5 p-4 rounded-lg hover:bg-white/10"
-                            >
-                                <Mail className="h-8 w-8" />
-                                ktpnewbrunswick@gmail.com
-                            </a>
-                        </motion.div>
+                    <section aria-labelledby="message-heading" className="mx-auto max-w-2xl rounded-2xl border border-white/15 bg-white/5 p-6 shadow-xl sm:p-8">
+                        <h2 id="message-heading" className="text-2xl font-bold text-white">Send us a message</h2>
+                        <p className="mt-2 text-sm text-slate-200">All fields are required.</p>
+                        <form onSubmit={handleSubmit} className="mt-6 space-y-5" aria-busy={sending}>
+                            <fieldset disabled={sending} className="space-y-5 disabled:opacity-70">
+                                <div>
+                                    <label htmlFor="contact-name" className="font-medium text-white">Name</label>
+                                    <input id="contact-name" name="name" autoComplete="name" required maxLength={100} placeholder="Your full name" className={fieldClass} />
+                                </div>
+                                <div>
+                                    <label htmlFor="contact-email" className="font-medium text-white">Email</label>
+                                    <input id="contact-email" name="email" type="email" autoComplete="email" required maxLength={254} placeholder="you@example.com" className={fieldClass} />
+                                </div>
+                                <div>
+                                    <label htmlFor="contact-message" className="font-medium text-white">Message</label>
+                                    <textarea id="contact-message" name="message" required minLength={10} maxLength={5000} rows={6} placeholder="How can we help?" className={`${fieldClass} resize-y`} />
+                                </div>
+                                <div className="hidden" aria-hidden="true">
+                                    <label htmlFor="contact-website">Leave this field empty</label>
+                                    <input id="contact-website" name="website" tabIndex={-1} autoComplete="off" />
+                                </div>
+                            </fieldset>
+                            <button disabled={sending} type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-300 disabled:cursor-wait disabled:opacity-60">
+                                <Send aria-hidden="true" className="h-5 w-5" />
+                                {sending ? 'Sending…' : 'Send Message'}
+                            </button>
+                            <p className="text-center text-sm text-slate-200">We’ll reach out to you with a response.</p>
+                            <div aria-live="polite" aria-atomic="true">
+                                {feedback && <p className={`rounded-lg border p-3 text-sm ${feedback.success ? 'border-green-300/40 bg-green-950/50 text-green-100' : 'border-red-300/40 bg-red-950/50 text-red-100'}`}>{feedback.text}</p>}
+                            </div>
+                        </form>
+                    </section>
 
-                        <motion.div variants={itemVariants} className="w-full max-w-md">
-                            <a
-                                href="https://www.instagram.com/ktpnewbrunswick/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-4 text-white hover:text-blue-400 transition-all transform hover:scale-105 text-xl bg-white/5 p-4 rounded-lg hover:bg-white/10"
-                            >
-                                <Instagram className="h-8 w-8" />
-                                @ktpnewbrunswick
-                            </a>
-                        </motion.div>
-
-                        <motion.div variants={itemVariants} className="w-full max-w-md">
-                            <a
-                                href="https://www.linkedin.com/company/kappa-theta-pi-new-brunswick/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-4 text-white hover:text-blue-400 transition-all transform hover:scale-105 text-xl bg-white/5 p-4 rounded-lg hover:bg-white/10"
-                            >
-                                <Linkedin className="h-8 w-8" />
-                                Kappa Theta Pi - New Brunswick
-                            </a>
-                        </motion.div>
-                    </div>
+                    <section aria-labelledby="other-contact-heading" className="mt-12">
+                        <h2 id="other-contact-heading" className="text-center text-xl font-semibold text-white">Other ways to connect</h2>
+                        <div className="mt-5 grid gap-4 md:grid-cols-3">
+                            {[
+                                { href: 'mailto:ktpnewbrunswick@gmail.com', Icon: Mail, title: 'Email', detail: 'ktpnewbrunswick@gmail.com' },
+                                { href: 'https://www.instagram.com/ktpnewbrunswick/', Icon: Instagram, title: 'Instagram', detail: '@ktpnewbrunswick' },
+                                { href: 'https://www.linkedin.com/company/kappa-theta-pi-new-brunswick/', Icon: Linkedin, title: 'LinkedIn', detail: 'Kappa Theta Pi – New Brunswick' },
+                            ].map(({ href, Icon, title, detail }) => (
+                                <a key={title} href={href} {...(title !== 'Email' ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="flex min-w-0 items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-5 text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300">
+                                    <Icon aria-hidden="true" className="h-6 w-6 shrink-0 text-blue-300" />
+                                    <span className="min-w-0"><span className="block font-semibold">{title}</span><span className="block break-words text-sm text-slate-200">{detail}</span></span>
+                                </a>
+                            ))}
+                        </div>
+                    </section>
 
                     <Box className="text-center mt-16">
                         <Typography variant="body1" className="text-gray-400 italic">
